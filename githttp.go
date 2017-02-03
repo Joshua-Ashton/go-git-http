@@ -17,6 +17,8 @@ type ResolveInfo struct {
 
 	// Request that needs to be resolved is included in case you need parameters like host headers in order to resolve a repo path
 	Request *http.Request
+
+	GitHttp *GitHttp
 }
 
 // PathResolver resolves a request path to a relative path on disk.
@@ -172,7 +174,7 @@ func (g *GitHttp) getInfoRefs(hr HandlerReq) error {
 	}
 
 	args := []string{service_name, "--stateless-rpc", "--advertise-refs", "."}
-	refs, err := g.gitCommand(dir, args...)
+	refs, err := g.GitCommand(dir, args...)
 	if err != nil {
 		return err
 	}
@@ -235,7 +237,7 @@ func (g *GitHttp) getGitDir(file_path string, req *http.Request) (string, error)
 
 	if g.PathResolver != nil {
 		var err error
-		file_path, err = g.PathResolver(ResolveInfo{Path: file_path, Request: req})
+		file_path, err = g.PathResolver(ResolveInfo{Path: file_path, Request: req, GitHttp: g})
 		if err != nil {
 			return "", err
 		}
@@ -297,7 +299,7 @@ func (g *GitHttp) getConfigSetting(service_name string, dir string) (bool, error
 
 func (g *GitHttp) getGitConfig(config_name string, dir string) (string, error) {
 	args := []string{"config", config_name}
-	out, err := g.gitCommand(dir, args...)
+	out, err := g.GitCommand(dir, args...)
 	if err != nil {
 		return "", err
 	}
@@ -306,10 +308,10 @@ func (g *GitHttp) getGitConfig(config_name string, dir string) (string, error) {
 
 func (g *GitHttp) updateServerInfo(dir string) ([]byte, error) {
 	args := []string{"update-server-info"}
-	return g.gitCommand(dir, args...)
+	return g.GitCommand(dir, args...)
 }
 
-func (g *GitHttp) gitCommand(dir string, args ...string) ([]byte, error) {
+func (g *GitHttp) GitCommand(dir string, args ...string) ([]byte, error) {
 	command := exec.Command(g.GitBinPath, args...)
 	command.Dir = dir
 
